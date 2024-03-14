@@ -24,22 +24,24 @@ export class AuthService {
   async signUp(signUpDto: SignUpDto): Promise<{ token: string }> {
     const { name, email, password } = signUpDto;
 
-    // Ensure name is not empty
     if (!name) {
       throw new ValidationException('Name cannot be empty');
     }
 
-    // Ensure email is valid
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       throw new ValidationException('Invalid email format');
     }
 
-    // Ensure password meets requirements
     if (!this.isValidPassword(password)) {
       throw new BadRequestException(
         'Password must be at least 8 characters long and contain at least one letter, one number, and one special character',
       );
+    }
+
+    const existingUser = await this.userModel.findOne({ email });
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
